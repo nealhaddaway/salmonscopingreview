@@ -1,0 +1,97 @@
+broad_topic,subtopic,feature,component,dictionary_row,broad_topic_id,hierarchy_path,repeated_general,exact_duplicate_path
+Business and economy,Companies,Companies,Companies,1,1,Business and economy > Companies > Companies > Companies,FALSE,FALSE
+Business and economy,Customer preference,Customer preference,Customer preference,2,1,Business and economy > Customer preference > Customer preference > Customer preference,FALSE,FALSE
+Business and economy,Economy,Economy,Economy,3,1,Business and economy > Economy > Economy > Economy,FALSE,FALSE
+Business and economy,Legislation,Legislation,Legislation,4,1,Business and economy > Legislation > Legislation > Legislation,FALSE,FALSE
+Business and economy,Public image,Public image,Public image,5,1,Business and economy > Public image > Public image > Public image,FALSE,FALSE
+Business and economy,Supply chains,Supply chains,Supply chains,6,1,Business and economy > Supply chains > Supply chains > Supply chains,FALSE,FALSE
+Consumption,Contaminant,Contaminant,Contaminant,7,2,Consumption > Contaminant > Contaminant > Contaminant,FALSE,FALSE
+Consumption,General,General,General,8,2,Consumption > General > General > General,TRUE,FALSE
+Consumption,Mislabelling,Mislabelling,Mislabelling,9,2,Consumption > Mislabelling > Mislabelling > Mislabelling,FALSE,FALSE
+Consumption,Palatability,Palatability,Palatability,10,2,Consumption > Palatability > Palatability > Palatability,FALSE,FALSE
+Consumption,Quality,Quality,Quality,11,2,Consumption > Quality > Quality > Quality,FALSE,FALSE
+Consumption,Safety,Safety,Safety,12,2,Consumption > Safety > Safety > Safety,FALSE,FALSE
+Impacts,Environmental impacts,Biodiversity impacts,Biodiversity impacts,13,3,Impacts > Environmental impacts > Biodiversity impacts > Biodiversity impacts,FALSE,FALSE
+Impacts,Environmental impacts,Escapes,Escapes,14,3,Impacts > Environmental impacts > Escapes > Escapes,FALSE,FALSE
+Impacts,Environmental impacts,General,General,15,3,Impacts > Environmental impacts > General > General,TRUE,FALSE
+Impacts,Environmental impacts,Impacts on native fish,Impacts on native fish,16,3,Impacts > Environmental impacts > Impacts on native fish > Impacts on native fish,FALSE,FALSE
+Impacts,Environmental impacts,Nutrient load,Nutrient load,17,3,Impacts > Environmental impacts > Nutrient load > Nutrient load,FALSE,FALSE
+Impacts,Environmental impacts,Wild versus farmed,Wild versus farmed,18,3,Impacts > Environmental impacts > Wild versus farmed > Wild versus farmed,FALSE,FALSE
+Impacts,Mitigation,Management,Escape mitigation,19,3,Impacts > Mitigation > Management > Escape mitigation,FALSE,FALSE
+Impacts,Mitigation,Output processing,Waste treatment,20,3,Impacts > Mitigation > Output processing > Waste treatment,FALSE,FALSE
+Impacts,Mitigation,Output processing,Water treatment,21,3,Impacts > Mitigation > Output processing > Water treatment,FALSE,FALSE
+Impacts,Social impacts,Social impacts,Social impacts,22,3,Impacts > Social impacts > Social impacts > Social impacts,FALSE,FALSE
+Production,Aquaculture facility,Equipment,Equipment,23,4,Production > Aquaculture facility > Equipment > Equipment,FALSE,FALSE
+Production,Aquaculture facility,General,General,24,4,Production > Aquaculture facility > General > General,TRUE,FALSE
+Production,Aquaculture facility,Hydrodynamics,Hydrodynamics,25,4,Production > Aquaculture facility > Hydrodynamics > Hydrodynamics,FALSE,FALSE
+Production,Aquaculture facility,Type,Closed,26,4,Production > Aquaculture facility > Type > Closed,FALSE,FALSE
+Production,Aquaculture facility,Type,Land-based,27,4,Production > Aquaculture facility > Type > Land-based,FALSE,FALSE
+Production,Aquaculture facility,Type,Location,28,4,Production > Aquaculture facility > Type > Location,FALSE,FALSE
+Production,Aquaculture facility,Type,Polyculture,29,4,Production > Aquaculture facility > Type > Polyculture,FALSE,FALSE
+Production,Aquaculture facility,Type,Pond-based,30,4,Production > Aquaculture facility > Type > Pond-based,FALSE,FALSE
+Production,Aquaculture facility,Type,Sea-based,31,4,Production > Aquaculture facility > Type > Sea-based,FALSE,FALSE
+Production,Feed,Additives,Additives,32,4,Production > Feed > Additives > Additives,FALSE,FALSE
+Production,Feed,Alternatives,Alternatives,33,4,Production > Feed > Alternatives > Alternatives,FALSE,FALSE
+Production,Feed,Contaminants,Contaminants,34,4,Production > Feed > Contaminants > Contaminants,FALSE,FALSE
+Production,Feed,Conventional,Conventional,35,4,Production > Feed > Conventional > Conventional,FALSE,FALSE
+Production,Feed,General,General,36,4,Production > Feed > General > General,TRUE,FALSE
+Production,Feed,Management,Management,37,4,Production > Feed > Management > Management,FALSE,FALSE
+Production,Fish biology,Anatomy,Anatomy,38,4,Production > Fish biology > Anatomy > Anatomy,FALSE,FALSE
+Production,Fish biology,Development,Developmental problems,39,4,Production > Fish biology > Development > Developmental problems,FALSE,FALSE
+Production,Fish biology,Fish behaviour,Fish behaviour,40,4,Production > Fish biology > Fish behaviour > Fish behaviour,FALSE,FALSE
+Production,Fish biology,General,General,41,4,Production > Fish biology > General > General,TRUE,FALSE
+Production,Fish biology,Histology,Histology,42,4,Production > Fish biology > Histology > Histology,FALSE,FALSE
+Production,Fish biology,Life stage,Life stage,43,4,Production > Fish biology > Life stage > Life stage,FALSE,FALSE
+Production,Fish biology,Management,Genetic modification,44,4,Production > Fish biology > Management > Genetic modification,FALSE,FALSE
+Production,Fish biology,Management,Genetics,45,4,Production > Fish biology > Management > Genetics,FALSE,FALSE
+Production,Fish biology,Management,Sex control,46,4,Production > Fish biology > Management > Sex control,FALSE,FALSE
+Production,Fish biology,Outcome,Outcome,47,4,Production > Fish biology > Outcome > Outcome,FALSE,FALSE
+Production,Fish biology,Reproduction,Reproduction,48,4,Production > Fish biology > Reproduction > Reproduction,FALSE,FALSE
+Production,Fish biology,Species,Atlantic salmon,49,4,Production > Fish biology > Species > Atlantic salmon,FALSE,FALSE
+Production,Fish biology,Species,Chinook salmon,50,4,Production > Fish biology > Species > Chinook salmon,FALSE,FALSE
+Production,Fish biology,Species,Chum salmon,51,4,Production > Fish biology > Species > Chum salmon,FALSE,FALSE
+Production,Fish biology,Species,Coho salmon,52,4,Production > Fish biology > Species > Coho salmon,FALSE,FALSE
+Production,Fish biology,Species,Pink salmon,53,4,Production > Fish biology > Species > Pink salmon,FALSE,FALSE
+Production,Fish biology,Species,Rainbow trout,54,4,Production > Fish biology > Species > Rainbow trout,FALSE,FALSE
+Production,Fish biology,Species,Sockeye salmon,55,4,Production > Fish biology > Species > Sockeye salmon,FALSE,FALSE
+Production,Fish health,Gut health,Gut health,56,4,Production > Fish health > Gut health > Gut health,FALSE,FALSE
+Production,Fish health,Immunity,Immune response,57,4,Production > Fish health > Immunity > Immune response,FALSE,FALSE
+Production,Fish health,Injury,Injury,58,4,Production > Fish health > Injury > Injury,FALSE,FALSE
+Production,Fish health,Toxicity,Toxicity,59,4,Production > Fish health > Toxicity > Toxicity,FALSE,FALSE
+Production,Fish welfare,General,General,60,4,Production > Fish welfare > General > General,TRUE,FALSE
+Production,Fish welfare,Pain,Pain,61,4,Production > Fish welfare > Pain > Pain,FALSE,FALSE
+Production,Fish welfare,Stress,Stress,62,4,Production > Fish welfare > Stress > Stress,FALSE,FALSE
+Production,Fish welfare,Treatment,Anaesthetic,63,4,Production > Fish welfare > Treatment > Anaesthetic,FALSE,FALSE
+Production,Fish welfare,Treatment,Stress treatment,64,4,Production > Fish welfare > Treatment > Stress treatment,FALSE,FALSE
+Production,Management,Externalities,Externalities,65,4,Production > Management > Externalities > Externalities,FALSE,FALSE
+Production,Management,Fish by-products,Fish by-products,66,4,Production > Management > Fish by-products > Fish by-products,FALSE,FALSE
+Production,Management,Fish identification,Fish identification:,67,4,Production > Management > Fish identification > Fish identification:,FALSE,FALSE
+Production,Management,General,General,68,4,Production > Management > General > General,TRUE,FALSE
+Production,Management,Practices,Farm management,69,4,Production > Management > Practices > Farm management,FALSE,FALSE
+Production,Management,Practices,Maximising productivity,70,4,Production > Management > Practices > Maximising productivity,FALSE,FALSE
+Production,Management,Practices,Predator deterrent,71,4,Production > Management > Practices > Predator deterrent,FALSE,FALSE
+Production,Management,Production stage,Production stage,72,4,Production > Management > Production stage > Production stage,FALSE,FALSE
+Production,Management,Productivity,Productivity,73,4,Production > Management > Productivity > Productivity,FALSE,FALSE
+Production,Pathology,General,General,74,4,Production > Pathology > General > General,TRUE,FALSE
+Production,Pathology,Illness,Illness,75,4,Production > Pathology > Illness > Illness,FALSE,FALSE
+Production,Pathology,Impacts,Impacts,76,4,Production > Pathology > Impacts > Impacts,FALSE,FALSE
+Production,Pathology,Organism,Organism,77,4,Production > Pathology > Organism > Organism,FALSE,FALSE
+Production,Pathology,Prevention,Antiseptic,78,4,Production > Pathology > Prevention > Antiseptic,FALSE,FALSE
+Production,Pathology,Prevention,Disinfectant,79,4,Production > Pathology > Prevention > Disinfectant,FALSE,FALSE
+Production,Pathology,Prevention,Vaccination,80,4,Production > Pathology > Prevention > Vaccination,FALSE,FALSE
+Production,Pathology,Sea lice,General,81,4,Production > Pathology > Sea lice > General,TRUE,FALSE
+Production,Pathology,Sea lice,Impacts,82,4,Production > Pathology > Sea lice > Impacts,FALSE,FALSE
+Production,Pathology,Sea lice,Species,83,4,Production > Pathology > Sea lice > Species,FALSE,FALSE
+Production,Pathology,Sea lice,Treatment,84,4,Production > Pathology > Sea lice > Treatment,FALSE,FALSE
+Production,Pathology,Treatment,Anti-parasitic,85,4,Production > Pathology > Treatment > Anti-parasitic,FALSE,FALSE
+Production,Pathology,Treatment,Antibiotic,86,4,Production > Pathology > Treatment > Antibiotic,FALSE,FALSE
+Production,Pathology,Treatment,Antibiotic resistance,87,4,Production > Pathology > Treatment > Antibiotic resistance,FALSE,FALSE
+Production,Pathology,Treatment,Antimicrobial,88,4,Production > Pathology > Treatment > Antimicrobial,FALSE,FALSE
+Production,Pathology,Treatment,General,89,4,Production > Pathology > Treatment > General,TRUE,FALSE
+Production,Pathology,Treatment,Insecticide,90,4,Production > Pathology > Treatment > Insecticide,FALSE,FALSE
+Production,Pathology,Treatment,Nematicide,91,4,Production > Pathology > Treatment > Nematicide,FALSE,FALSE
+Research methods,Methodology,General,General,92,5,Research methods > Methodology > General > General,TRUE,FALSE
+Research methods,Methodology,Literature review,Literature review,93,5,Research methods > Methodology > Literature review > Literature review,FALSE,FALSE
+Research methods,Methodology,Modelling,Modelling,94,5,Research methods > Methodology > Modelling > Modelling,FALSE,FALSE
+Research methods,Methodology,Monitoring,Monitoring,95,5,Research methods > Methodology > Monitoring > Monitoring,FALSE,FALSE
+Research methods,Research stage,Research stage,Research stage,96,5,Research methods > Research stage > Research stage > Research stage,FALSE,FALSE
