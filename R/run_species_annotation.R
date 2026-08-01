@@ -41,7 +41,21 @@ run_species_annotation <- function(
       dictionary = species_dictionary
     )
     
-    assignment <- assign_farmed_species(mentions)
+    mentions <- filter_species_mentions(
+      mentions = mentions,
+      title = records$title[[i]],
+      abstract = records$abstract[[i]]
+    )
+    
+    eligible_mentions <- mentions[
+      mentions$mention_eligible %in% TRUE,
+      ,
+      drop = FALSE
+    ]
+    
+    assignment <- assign_farmed_species(
+      eligible_mentions
+    )
     
     if (nrow(mentions) > 0) {
       mentions <- mentions |>

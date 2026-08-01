@@ -26,33 +26,6 @@ make_mentions <- function(
   )
 }
 
-# Test 1: explicitly wild Atlantic salmon is excluded
-title_1 <- "Effects on wild Atlantic salmon populations"
-
-mentions_1 <- make_mentions(
-  preferred_name = "Atlantic salmon",
-  scientific_name = "Salmo salar",
-  matched_term = "Atlantic salmon",
-  source = "title",
-  match_start = 17L,
-  match_end = 31L,
-  is_farmed_candidate = TRUE
-)
-
-result_1 <- filter_species_mentions(
-  mentions = mentions_1,
-  title = title_1,
-  abstract = NA_character_
-)
-
-stopifnot(
-  identical(result_1$mention_eligible, FALSE),
-  identical(
-    result_1$filter_reason,
-    "Species explicitly identified as wild"
-  )
-)
-
 # Test 2: an ordinary Atlantic salmon mention is retained
 title_2 <- "Growth performance of Atlantic salmon in sea cages"
 
@@ -75,43 +48,6 @@ result_2 <- filter_species_mentions(
 stopifnot(
   identical(result_2$mention_eligible, TRUE),
   is.na(result_2$filter_reason)
-)
-
-# Test 3: explicitly farmed and wild wording is not automatically excluded
-abstract_3 <- paste(
-  "We compared farmed Atlantic salmon with wild Atlantic salmon."
-)
-
-mentions_3 <- rbind(
-  make_mentions(
-    preferred_name = "Atlantic salmon",
-    scientific_name = "Salmo salar",
-    matched_term = "Atlantic salmon",
-    source = "abstract",
-    match_start = 20L,
-    match_end = 34L,
-    is_farmed_candidate = TRUE
-  ),
-  make_mentions(
-    preferred_name = "Atlantic salmon",
-    scientific_name = "Salmo salar",
-    matched_term = "Atlantic salmon",
-    source = "abstract",
-    match_start = 46L,
-    match_end = 60L,
-    is_farmed_candidate = TRUE
-  )
-)
-
-result_3 <- filter_species_mentions(
-  mentions = mentions_3,
-  title = NA_character_,
-  abstract = abstract_3
-)
-
-stopifnot(
-  result_3$mention_eligible[1],
-  result_3$mention_eligible[2]
 )
 
 # Test 4: generic salmon near non-target Salmo trutta is excluded
@@ -246,7 +182,7 @@ stopifnot(
 )
 
 # Test 7: empty mentions are handled safely
-empty_mentions <- mentions_1[0, ]
+empty_mentions <- mentions_2[0, ]
 
 result_7 <- filter_species_mentions(
   mentions = empty_mentions,

@@ -4,6 +4,7 @@ source("scripts/00_setup.R")
 source("R/read_corpus.R")
 source("R/validate_species_dictionary.R")
 source("R/detect_species_mentions.R")
+source("R/filter_species_mentions.R")
 source("R/assign_farmed_species.R")
 source("R/run_species_annotation.R")
 

@@ -224,6 +224,31 @@ filter_species_mentions <- function(
       return(FALSE)
     }
     
+    # Explicit salmon-farming phrases should remain eligible even when a
+    # non-target Salmo species is mentioned nearby.
+    explicit_farming_terms <- c(
+      "salmon farm",
+      "salmon farms",
+      "farmed salmon",
+      "salmon aquaculture",
+      "salmon cage",
+      "salmon cages",
+      "salmon pen",
+      "salmon pens"
+    )
+    
+    matched_term <- tolower(
+      ifelse(
+        is.na(generic_row$matched_term),
+        "",
+        generic_row$matched_term
+      )
+    )
+    
+    if (matched_term %in% explicit_farming_terms) {
+      return(FALSE)
+    }
+    
     same_source <- mentions$source == generic_row$source
     
     non_target_rows <- vapply(
@@ -273,25 +298,6 @@ filter_species_mentions <- function(
   mentions$filter_reason <- NA_character_
   
   for (i in seq_len(nrow(mentions))) {
-    
-    text <- source_text(
-      mentions$source[i]
-    )
-    
-    if (
-      is_explicitly_wild(
-        text = text,
-        start = mentions$match_start[i],
-        end = mentions$match_end[i]
-      )
-    ) {
-      
-      mentions$mention_eligible[i] <- FALSE
-      mentions$filter_reason[i] <-
-        "Species explicitly identified as wild"
-      
-      next
-    }
     
     if (generic_refers_to_non_target(i)) {
       

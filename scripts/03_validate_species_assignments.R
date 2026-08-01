@@ -164,7 +164,78 @@ add_validation_columns <- function(df) {
 single_species_sample <- add_validation_columns(single_species_sample)
 multi_species_sample <- add_validation_columns(multi_species_sample)
 manual_review_all <- add_validation_columns(manual_review_all)
+
+validated_manual_path <- here::here(
+  "outputs",
+  "stage_2_validation",
+  "manual_review_validated_80.csv"
+)
+
+if (file.exists(validated_manual_path)) {
+  
+  validated_manual <- readr::read_csv(
+    validated_manual_path,
+    show_col_types = FALSE
+  ) |>
+    dplyr::select(
+      record_sequence,
+      validation_correct,
+      validation_species,
+      validation_notes
+    )
+  
+  manual_review_all <- manual_review_all |>
+    dplyr::select(
+      -dplyr::any_of(
+        c(
+          "validation_correct",
+          "validation_species",
+          "validation_notes"
+        )
+      )
+    ) |>
+    dplyr::left_join(
+      validated_manual,
+      by = "record_sequence"
+    )
+}
+
 high_multiplicity_all <- add_validation_columns(high_multiplicity_all)
+
+set.seed(20260801)
+
+manual_review_sample_50 <-
+  manual_review_all |>
+  dplyr::filter(is.na(validation_correct))
+
+reason_counts <-
+  manual_review_sample_50 |>
+  dplyr::count(
+    assignment_reason,
+    sort = TRUE
+  )
+
+sampled <- purrr::map_dfr(
+  reason_counts$assignment_reason,
+  function(reason) {
+    
+    pool <-
+      manual_review_sample_50 |>
+      dplyr::filter(
+        assignment_reason == reason
+      )
+    
+    dplyr::slice_sample(
+      pool,
+      n = min(25L, nrow(pool))
+    )
+    
+  }
+)
+
+manual_review_sample_50 <-
+  sampled |>
+  dplyr::slice_sample(n = min(50L, nrow(sampled)))
 
 #----------------------------------------------------------
 # Export validation datasets
@@ -221,6 +292,12 @@ wb$add_data("Manual review", manual_review_all)
 
 wb$add_worksheet("High multiplicity")
 wb$add_data("High multiplicity", high_multiplicity_all)
+
+wb$add_worksheet("Remaining sample 50")
+wb$add_data(
+  "Remaining sample 50",
+  manual_review_sample_50
+)
 
 wb$save(
   file.path(
