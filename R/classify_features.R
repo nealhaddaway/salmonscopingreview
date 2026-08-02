@@ -129,7 +129,7 @@ classify_features <- function(
         type = "array",
         items = list(
           type = "string",
-          enum = valid_paths
+          enum = I(valid_paths)
         )
       ),
       review_required = list(
@@ -219,8 +219,31 @@ classify_features <- function(
       body,
       auto_unbox = TRUE
     ) |>
-    httr2::req_perform() |>
-    httr2::resp_body_json()
+    httr2::req_timeout(120) |>
+    httr2::req_retry(
+      max_tries = 3,
+      backoff = ~ 2^.x
+    ) |>
+    httr2::req_error(
+      is_error = function(resp) FALSE
+    ) |>
+    httr2::req_perform()
+  
+  status_code <- httr2::resp_status(response)
+  
+  if (status_code >= 400L) {
+    
+    error_body <- httr2::resp_body_string(response)
+    
+    stop(
+      "OpenAI HTTP ",
+      status_code,
+      ": ",
+      error_body
+    )
+  }
+  
+  response <- httr2::resp_body_json(response)
   
   if (!identical(response$status, "completed")) {
     stop(

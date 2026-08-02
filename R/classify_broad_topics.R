@@ -120,9 +120,26 @@ classify_broad_topics <- function(
     
     req_body_json(body, auto_unbox = TRUE) |>
     
-    req_perform() |>
+    httr2::req_error(
+      is_error = function(resp) FALSE
+    ) |>
+    httr2::req_perform()
+  
+  status_code <- httr2::resp_status(response)
+  
+  if (status_code >= 400L) {
     
-    resp_body_json()
+    error_body <- httr2::resp_body_string(response)
+    
+    stop(
+      "OpenAI HTTP ",
+      status_code,
+      ": ",
+      error_body
+    )
+  }
+  
+  response <- httr2::resp_body_json(response)
   
   if (!identical(response$status, "completed")) {
     stop(

@@ -121,7 +121,7 @@ classify_subtopics <- function(
         type = "array",
         items = list(
           type = "string",
-          enum = valid_paths
+          enum = I(valid_paths)
         )
       ),
       review_required = list(
@@ -200,6 +200,11 @@ classify_subtopics <- function(
     httr2::req_body_json(
       body,
       auto_unbox = TRUE
+    ) |>
+    httr2::req_timeout(120) |>
+    httr2::req_retry(
+      max_tries = 3,
+      backoff = ~ 2^.x
     ) |>
     httr2::req_perform() |>
     httr2::resp_body_json()
