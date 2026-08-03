@@ -1,7 +1,7 @@
 # =============================================================================
 # File: 11_validate_llm_classifier.R
 # Project: salmonscopingreview
-# Purpose: Run and export a 100-record validation sample for the five-stage
+# Purpose: Run and export a 20-record validation sample for the five-stage
 #          hierarchical LLM topic classifier
 # =============================================================================
 
@@ -27,11 +27,6 @@ input_ontology <- here::here(
   "llm_topic_ontology.csv"
 )
 
-input_topic_dictionary <- here::here(
-  "data_raw",
-  "Salmon scoping review keywords - FULL dictionary_NO_FARMED_SPECIES.csv"
-)
-
 output_dir <- here::here(
   "outputs",
   "stage_4_llm",
@@ -42,8 +37,7 @@ fs::dir_create(output_dir)
 
 stopifnot(
   file.exists(input_records),
-  file.exists(input_ontology),
-  file.exists(input_topic_dictionary)
+  file.exists(input_ontology)
 )
 
 records <- read_corpus(input_records)
@@ -52,12 +46,6 @@ ontology <- readr::read_csv(
   input_ontology,
   show_col_types = FALSE
 )
-
-topic_dictionary <- readr::read_csv(
-  input_topic_dictionary,
-  show_col_types = FALSE
-) |>
-  janitor::clean_names()
 
 # Fixed validation sample ------------------------------------------------------
 
@@ -70,7 +58,7 @@ validation_records <- records |>
     !is.na(abstract),
     nzchar(abstract)
   ) |>
-  dplyr::slice_sample(n = 100L) |>
+  dplyr::slice_sample(n = 20L) |>
   dplyr::select(
     record_sequence,
     record_id,
@@ -114,8 +102,7 @@ classify_one_record <- function(
     classify_topic_hierarchy(
       title = title,
       abstract = abstract,
-      ontology = ontology,
-      topic_dictionary = topic_dictionary
+      ontology = ontology
     ),
     error = function(e) {
       structure(
@@ -194,7 +181,7 @@ classify_one_record <- function(
 
   predicted_paths <- result |>
     dplyr::filter(
-      !is.na(term)
+      !is.na(component)
     ) |>
     dplyr::transmute(
       value = paste(
@@ -202,7 +189,6 @@ classify_one_record <- function(
         subtopic,
         feature,
         component,
-        term,
         sep = " > "
       )
     ) |>
@@ -220,9 +206,6 @@ classify_one_record <- function(
     predicted_subtopics = predicted_subtopics,
     predicted_features = predicted_features,
     predicted_components = predicted_components,
-    predicted_terms = collapse_unique(
-      result$term
-    ),
     predicted_paths = predicted_paths,
     review_required = any(
       result$review_required %in% TRUE
@@ -248,7 +231,6 @@ validation_results <- validation_results |>
     subtopic_correct = NA_character_,
     feature_correct = NA_character_,
     component_correct = NA_character_,
-    term_correct = NA_character_,
     corrected_paths = NA_character_,
     validation_notes = NA_character_
   )
@@ -257,12 +239,12 @@ validation_results <- validation_results |>
 
 csv_path <- fs::path(
   output_dir,
-  "llm_validation_100.csv"
+  "llm_validation_20.csv"
 )
 
 xlsx_path <- fs::path(
   output_dir,
-  "llm_validation_100.xlsx"
+  "llm_validation_20.xlsx"
 )
 
 readr::write_csv(
@@ -273,9 +255,9 @@ readr::write_csv(
 
 wb <- openxlsx2::wb_workbook()
 
-wb$add_worksheet("Validation 100")
+wb$add_worksheet("Validation 20")
 wb$add_data(
-  "Validation 100",
+  "Validation 20",
   validation_results
 )
 
@@ -288,12 +270,10 @@ wb$add_data(
       "subtopic_correct",
       "feature_correct",
       "component_correct",
-      "term_correct",
       "corrected_paths",
       "validation_notes"
     ),
     permitted_values = c(
-      "Yes / Partial / No",
       "Yes / Partial / No",
       "Yes / Partial / No",
       "Yes / Partial / No",

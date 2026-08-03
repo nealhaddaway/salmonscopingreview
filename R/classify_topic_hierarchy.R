@@ -1,14 +1,13 @@
 # =============================================================================
 # File: classify_topic_hierarchy.R
 # Project: salmonscopingreview
-# Purpose: Run the five-stage hierarchical LLM topic classifier
+# Purpose: Run the four-stage hierarchical LLM topic classifier
 # =============================================================================
 
 classify_topic_hierarchy <- function(
     title,
     abstract,
     ontology,
-    topic_dictionary,
     model = "gpt-5-mini"
 ) {
 
@@ -30,12 +29,10 @@ classify_topic_hierarchy <- function(
         subtopic = character(),
         feature = character(),
         component = character(),
-        term = character(),
         broad_review_required = logical(),
         subtopic_review_required = logical(),
         feature_review_required = logical(),
         component_review_required = logical(),
-        term_review_required = logical(),
         review_required = logical()
       )
     )
@@ -56,12 +53,10 @@ classify_topic_hierarchy <- function(
         subtopic = NA_character_,
         feature = NA_character_,
         component = NA_character_,
-        term = NA_character_,
         broad_review_required = broad$review_required,
         subtopic_review_required = TRUE,
         feature_review_required = NA,
         component_review_required = NA,
-        term_review_required = NA,
         review_required = TRUE
       )
     )
@@ -83,12 +78,10 @@ classify_topic_hierarchy <- function(
           subtopic,
           feature = NA_character_,
           component = NA_character_,
-          term = NA_character_,
           broad_review_required = broad$review_required,
           subtopic_review_required = review_required,
           feature_review_required = TRUE,
           component_review_required = NA,
-          term_review_required = NA,
           review_required = TRUE
         )
     )
@@ -110,62 +103,49 @@ classify_topic_hierarchy <- function(
           subtopic,
           feature,
           component = NA_character_,
-          term = NA_character_,
           broad_review_required = broad$review_required,
           subtopic_review_required = FALSE,
           feature_review_required = review_required,
           component_review_required = TRUE,
-          term_review_required = NA,
           review_required = TRUE
         )
     )
   }
 
-  terms <- classify_terms(
-    title = title,
-    abstract = abstract,
-    components = components,
-    topic_dictionary = topic_dictionary,
-    model = model
-  )
+  # Drop General > General when a more specific parallel path exists
+  # within the same broad-topic and subtopic branch.
+  components <- components |>
+    dplyr::group_by(
+      broad_topic,
+      subtopic
+    ) |>
+    dplyr::filter(
+      !(
+        feature == "General" &
+          component == "General" &
+          any(
+            feature != "General" |
+              component != "General"
+          )
+      )
+    ) |>
+    dplyr::ungroup()
 
-  if (nrow(terms) == 0L) {
-    return(
-      components |>
-        dplyr::transmute(
-          broad_topic,
-          subtopic,
-          feature,
-          component,
-          term = NA_character_,
-          broad_review_required = broad$review_required,
-          subtopic_review_required = FALSE,
-          feature_review_required = FALSE,
-          component_review_required = review_required,
-          term_review_required = TRUE,
-          review_required = TRUE
-        )
-    )
-  }
-
-  terms |>
+  components |>
     dplyr::transmute(
       broad_topic,
       subtopic,
       feature,
       component,
-      term,
       broad_review_required = broad$review_required,
       subtopic_review_required = FALSE,
       feature_review_required = FALSE,
-      component_review_required = FALSE,
-      term_review_required = review_required,
+      component_review_required = review_required,
       review_required = (
         broad_review_required |
           subtopic_review_required |
           feature_review_required |
-          component_review_required |
-          term_review_required
+          component_review_required
       )
     )
 }
