@@ -44,3 +44,11 @@ The script writes the following to `outputs/stage_1_audit/`:
 A record can be included even when its title or abstract does not explicitly name the core farmed species. Species assignment will therefore include an `unspecified eligible salmon/rainbow trout` state and a manual-review flag. We will not infer Atlantic salmon solely from geography.
 
 Core farmed species will later be restricted to Atlantic salmon, eligible Pacific salmon species, and rainbow trout/steelhead. Other trout and char species will be retained only as supplementary biological entities, never as the main exposure/intervention.
+
+## Documentation
+
+The annotation workflow is described in the following documents:
+
+- `docs/annotation_workflow.md` — complete description of the automated annotation workflow.
+- `docs/validation_report.md` — validation procedures and performance.
+- `docs/manuscript_methods.md` — manuscript-ready methods text.

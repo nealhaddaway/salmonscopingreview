@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+title: "Automated Annotation Workflow for a Global Systematic Map of Salmon Aquaculture Research"
+message: "If you use this repository, please cite it using the metadata below."
+type: software
+
+authors:
+  - family-names: Haddaway
+    given-names: Neal
+    orcid: "https://orcid.org/0000-0003-3902-2234"
+
+repository-code: https://github.com/nealhaddaway/salmonscopingreview
+
+abstract: >
+  Reproducible workflow for automated annotation of bibliographic records
+  from a global systematic map of salmon aquaculture research. The workflow
+  generates species, geographic and hierarchical topic annotations using a
+  combination of deterministic rule-based methods and large language models.
+
+keywords:
+  - evidence synthesis
+  - systematic map
+  - salmon aquaculture
+  - text mining
+  - annotation
+  - R
+
+license: MIT
+version: 1.0.0
+date-released: 2026-08-03
+
+url: https://github.com/nealhaddaway/salmonscopingreview
