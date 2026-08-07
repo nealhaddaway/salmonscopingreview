@@ -1,0 +1,366 @@
+# =============================================================================
+# File: scripts/64_llm_screen_uncertain_records.R
+# Purpose: Apply a concise protocol-based LLM screen only to records assigned
+#          to "review" by the statistical relevance classifier, after the
+#          publication-status step.
+# =============================================================================
+
+source("scripts/00_setup.R")
+
+input_file <- here::here(
+  "outputs",
+  "living_map_screening",
+  "publication_status",
+  "records_cleared_publication_status.csv"
+)
+
+output_dir <- here::here(
+  "outputs",
+  "living_map_screening",
+  "llm_screening"
+)
+
+fs::dir_create(output_dir)
+
+checkpoint_file <- fs::path(output_dir, "llm_screening_checkpoint.rds")
+record_output_file <- fs::path(output_dir, "llm_screening_record.csv")
+retain_file <- fs::path(output_dir, "llm_retain.csv")
+exclude_file <- fs::path(output_dir, "llm_exclude.csv")
+human_review_file <- fs::path(output_dir, "human_review.csv")
+failure_file <- fs::path(output_dir, "llm_screening_failures.csv")
+prompt_file <- fs::path(output_dir, "llm_screening_prompt.txt")
+
+stopifnot(file.exists(input_file))
+
+api_key <- Sys.getenv("OPENAI_API_KEY")
+if (!nzchar(api_key)) {
+  stop("OPENAI_API_KEY was not found.")
+}
+
+records_all <- readr::read_csv(
+  input_file,
+  show_col_types = FALSE,
+  col_types = readr::cols(
+    record_id = readr::col_character()
+  )
+)
+
+review_flag <- rep(FALSE, nrow(records_all))
+
+if ("screening_decision" %in% names(records_all)) {
+  review_flag <- review_flag |
+    dplyr::coalesce(records_all$screening_decision == "review", FALSE)
+}
+
+if ("pipeline_status" %in% names(records_all)) {
+  review_flag <- review_flag |
+    dplyr::coalesce(records_all$pipeline_status == "review", FALSE)
+}
+
+records <- records_all |>
+  dplyr::filter(review_flag) |>
+  dplyr::mutate(
+    llm_record_key = dplyr::row_number(),
+    record_id = as.character(record_id),
+    title = dplyr::coalesce(as.character(title), ""),
+    abstract = dplyr::coalesce(as.character(abstract), "")
+  )
+
+if (nrow(records) == 0L) {
+  stop("No records assigned to statistical review were found in: ", input_file)
+}
+
+system_prompt <- paste(
+  "You are screening titles and abstracts for a living evidence map of",
+  "salmon farming.",
+  "",
+  "RETAIN a record when salmon farming is a substantive focus and it concerns",
+  "one or more eligible farmed salmonids:",
+  "- Atlantic salmon",
+  "- Pacific salmon species, including Chinook, coho, sockeye, chum, pink",
+  "  and masu salmon",
+  "- rainbow trout",
+  "- farmed salmon where the species is not specified",
+  "",
+  "Eligible records may concern any substantive aspect of farming, production,",
+  "inputs, fish health, welfare, environmental pressures or impacts, products,",
+  "economics, governance, labour, communities, consumers, or research methods",
+  "specifically applied to eligible salmon farming.",
+  "",
+  "EXCLUDE when:",
+  "- the study concerns only wild salmonids, capture fisheries or conservation;",
+  "- salmon farming is only background, context or a passing example;",
+  "- it concerns only non-eligible aquaculture species;",
+  "- it concerns basic salmon biology without a substantive farming context;",
+  "- the available title and abstract clearly do not concern eligible salmon",
+  "  farming.",
+  "",
+  "For mixed-species studies, RETAIN if eligible farmed salmonids are a",
+  "substantive part of the evidence, analysis or conclusions.",
+  "",
+  "Reviews, systematic reviews, meta-analyses, policy papers and synthesis",
+  "papers are eligible when eligible salmon farming is a substantive focus,",
+  "even if other aquaculture species, fisheries or food systems are also",
+  "discussed.",
+  "",
+  "Use UNCERTAIN only as a last resort.",
+  "Choose RETAIN whenever the available title and abstract make eligibility",
+  "more defensible than ineligibility.",
+  "Choose EXCLUDE whenever the available title and abstract make ineligibility",
+  "more defensible than eligibility.",
+  "Use UNCERTAIN only when the title and abstract genuinely do not contain",
+  "enough information to make a defensible decision. Do not use UNCERTAIN",
+  "merely because the paper is broad, multidisciplinary, uses unusual",
+  "terminology, or requires reasonable inference.",
+  "",
+  "DECISION HIERARCHY",
+  "1. If clearly eligible, choose RETAIN.",
+  "2. Otherwise, if clearly ineligible, choose EXCLUDE.",
+  "3. Otherwise, choose UNCERTAIN.",
+  "",
+  "Base the decision only on the supplied title and abstract.",
+  "Give one concise reason.",
+  sep = "\n"
+)
+
+readr::write_lines(system_prompt, prompt_file)
+
+response_schema <- list(
+  type = "object",
+  properties = list(
+    decision = list(
+      type = "string",
+      enum = c("retain", "exclude", "uncertain")
+    ),
+    reason = list(type = "string")
+  ),
+  required = c("decision", "reason"),
+  additionalProperties = FALSE
+)
+
+extract_output_text <- function(response) {
+  message_items <- response$output[
+    vapply(
+      response$output,
+      function(item) identical(item$type, "message"),
+      logical(1)
+    )
+  ]
+
+  content_items <- unlist(
+    lapply(message_items, function(item) item$content),
+    recursive = FALSE
+  )
+
+  text_items <- content_items[
+    vapply(
+      content_items,
+      function(item) {
+        identical(item$type, "output_text") && !is.null(item$text)
+      },
+      logical(1)
+    )
+  ]
+
+  if (length(text_items) == 0L) {
+    stop("No output_text item was returned.")
+  }
+
+  text_items[[1]]$text
+}
+
+screen_record <- function(llm_record_key, record_id, title, abstract) {
+  user_prompt <- paste0(
+    "TITLE\n",
+    title,
+    "\n\nABSTRACT\n",
+    abstract,
+    "\n\nDecide whether this record meets the salmon-farming eligibility criteria."
+  )
+
+  body <- list(
+    model = "gpt-5-mini",
+    store = FALSE,
+    reasoning = list(effort = "low"),
+    input = list(
+      list(
+        role = "system",
+        content = list(list(type = "input_text", text = system_prompt))
+      ),
+      list(
+        role = "user",
+        content = list(list(type = "input_text", text = user_prompt))
+      )
+    ),
+    text = list(
+      verbosity = "low",
+      format = list(
+        type = "json_schema",
+        name = "salmon_farming_relevance_screen",
+        strict = TRUE,
+        schema = response_schema
+      )
+    )
+  )
+
+  parsed <- tryCatch(
+    {
+      response <- httr2::request(
+        "https://api.openai.com/v1/responses"
+      ) |>
+        httr2::req_auth_bearer_token(api_key) |>
+        httr2::req_body_json(body, auto_unbox = TRUE) |>
+        httr2::req_timeout(120) |>
+        httr2::req_retry(max_tries = 4, backoff = ~ 2^.x) |>
+        httr2::req_perform() |>
+        httr2::resp_body_json()
+
+      jsonlite::fromJSON(
+        extract_output_text(response),
+        simplifyVector = TRUE
+      )
+    },
+    error = function(e) {
+      structure(
+        list(message = conditionMessage(e)),
+        class = "screening_error"
+      )
+    }
+  )
+
+  if (inherits(parsed, "screening_error")) {
+    return(
+      tibble::tibble(
+        llm_record_key = llm_record_key,
+        record_id = record_id,
+        llm_decision = "uncertain",
+        llm_reason = NA_character_,
+        llm_failed = TRUE,
+        llm_error = parsed$message
+      )
+    )
+  }
+
+  tibble::tibble(
+    llm_record_key = llm_record_key,
+    record_id = record_id,
+    llm_decision = parsed$decision,
+    llm_reason = parsed$reason,
+    llm_failed = FALSE,
+    llm_error = NA_character_
+  )
+}
+
+if (file.exists(checkpoint_file)) {
+  results <- readRDS(checkpoint_file)
+  completed_keys <- unique(results$llm_record_key)
+
+  message(
+    "Resuming LLM relevance screening: ",
+    length(completed_keys),
+    " / ",
+    nrow(records),
+    " completed."
+  )
+} else {
+  results <- tibble::tibble()
+  completed_keys <- integer()
+
+  message(
+    "Starting LLM screening of ",
+    nrow(records),
+    " statistically uncertain records."
+  )
+}
+
+remaining <- records |>
+  dplyr::filter(!llm_record_key %in% completed_keys)
+
+for (i in seq_len(nrow(remaining))) {
+  current <- remaining[i, ]
+
+  message(
+    "Screening ",
+    length(completed_keys) + i,
+    " / ",
+    nrow(records),
+    ": ",
+    current$record_id
+  )
+
+  result <- screen_record(
+    llm_record_key = current$llm_record_key,
+    record_id = current$record_id,
+    title = current$title,
+    abstract = current$abstract
+  )
+
+  results <- dplyr::bind_rows(results, result)
+
+  saveRDS(results, checkpoint_file)
+
+  combined <- records |>
+    dplyr::left_join(
+      results,
+      by = c("llm_record_key", "record_id")
+    ) |>
+    dplyr::filter(!is.na(llm_decision)) |>
+    dplyr::arrange(llm_record_key)
+
+  readr::write_csv(combined, record_output_file, na = "")
+
+  readr::write_csv(
+    combined |>
+      dplyr::filter(llm_decision == "retain", !llm_failed),
+    retain_file,
+    na = ""
+  )
+
+  readr::write_csv(
+    combined |>
+      dplyr::filter(llm_decision == "exclude", !llm_failed),
+    exclude_file,
+    na = ""
+  )
+
+  readr::write_csv(
+    combined |>
+      dplyr::filter(llm_decision == "uncertain" | llm_failed) |>
+      dplyr::mutate(
+        human_decision = NA_character_,
+        human_notes = NA_character_
+      ),
+    human_review_file,
+    na = ""
+  )
+
+  readr::write_csv(
+    combined |>
+      dplyr::filter(llm_failed),
+    failure_file,
+    na = ""
+  )
+}
+
+final_results <- readr::read_csv(
+  record_output_file,
+  show_col_types = FALSE,
+  col_types = readr::cols(
+    record_id = readr::col_character()
+  )
+)
+
+summary <- final_results |>
+  dplyr::count(
+    llm_decision,
+    llm_failed,
+    name = "records"
+  )
+
+message("")
+message("LLM screening completed.")
+print(summary)
+message("")
+message("Retain: ", retain_file)
+message("Exclude: ", exclude_file)
+message("Human review: ", human_review_file)
