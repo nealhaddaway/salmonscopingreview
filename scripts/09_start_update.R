@@ -7,7 +7,7 @@
 #   source("scripts/09_start_update.R")
 #
 # Before running, place new search-result files in:
-#   data_incoming/
+#   data_updates/incoming/
 #
 # The script creates an update-specific archive and a PRISMA/ROSES-oriented
 # manifest. The current master is copied before any processing occurs.
@@ -23,7 +23,7 @@ update_id <- paste0(
 current_file <- here::here(
   "data_current", "salmon_evidence_map.csv"
 )
-incoming_dir <- here::here("data_incoming")
+incoming_dir <- here::here("data_updates", "incoming")
 
 archive_master_dir <- here::here("data_archive", "masters")
 archive_incoming_dir <- here::here("data_archive", "incoming", update_id)
