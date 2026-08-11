@@ -1,0 +1,5 @@
+record_id,final_primary_country_iso3c,override_reason
+83283,"CAN, CHL, NOR, USA","Source of farmed fish is important, not the market location"
+72909,"ISL, NOR, FRO","It's clear these are the study countries from the context"
+75456,CHL,"Source country is relevant, USA is the export destination"
+84258,"IRL, NOR","These are implicitly the study countries"
