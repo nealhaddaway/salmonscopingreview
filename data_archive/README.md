@@ -3,11 +3,13 @@
 ## Canonical locations
 
 - `data_current/salmon_evidence_map.csv` is the current validated master.
-- `data_incoming/` contains new database-search exports awaiting an update.
+- `data_updates/incoming/` contains new database-search exports awaiting an update.
 - `data_archive/masters/` contains immutable dated copies of previous masters.
 - `data_archive/incoming/UPDATE_YYYY-MM-DD/` contains exact copies of incoming search files used for an update.
-- `data_archive/updates/UPDATE_YYYY-MM-DD/` contains the processed outputs for an update.
+- `data_archive/updates/UPDATE_YYYY-MM-DD/` contains processed outputs for an update.
 - `data_archive/manifests/` contains the PRISMA/ROSES-oriented numerical accounting for each update.
+
+The incoming directory is deliberately kept separate from the archive: files remain there until the corresponding update has been completed and its provenance is secured in the archive.
 
 ## Update principle
 
@@ -19,7 +21,7 @@ An update is archive-first and validation-gated:
 4. Create and validate a candidate new master.
 5. Only after validation succeeds, promote the candidate to `data_current/salmon_evidence_map.csv`.
 
-The previous master is never overwritten. The raw incoming search files are never replaced by normalised or processed versions.
+The previous master is never overwritten. Raw incoming search files are never replaced by normalised or processed versions.
 
 ## Reporting accounting
 
