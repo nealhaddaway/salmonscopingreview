@@ -1,0 +1,30 @@
+name: Master relevance audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.6.1'
+
+      - name: Run master relevance audit
+        env:
+          TZ: UTC
+        run: Rscript scripts/64_audit_master_relevance.R
+
+      - name: Upload audit outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-relevance-audit
+          path: outputs/master_relevance_audit/
+          if-no-files-found: error
