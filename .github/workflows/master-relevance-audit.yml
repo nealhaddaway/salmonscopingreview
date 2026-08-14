@@ -17,6 +17,11 @@ jobs:
         with:
           r-version: '4.6.1'
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libuv1-dev
+
       - name: Run master relevance audit
         env:
           TZ: UTC
