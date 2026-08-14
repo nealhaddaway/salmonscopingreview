@@ -2,8 +2,6 @@ name: Master relevance audit
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 jobs:
   audit:
