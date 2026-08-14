@@ -19,7 +19,8 @@ jobs:
       - name: Restore and patch relevance_screening.R
         run: |
           set -euo pipefail
-          git checkout d6f4cec28f6b11f63f63e56638553c161d07301c -- R/relevance_screening.R
+          git fetch --no-tags --depth=1 origin 7807513c0c0a79622d79e4344c2f20fa4c938ace
+          git checkout 7807513c0c0a79622d79e4344c2f20fa4c938ace -- R/relevance_screening.R
           python3 - <<'PY'
           from pathlib import Path
           p = Path('R/relevance_screening.R')
