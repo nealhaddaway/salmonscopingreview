@@ -29,7 +29,8 @@ output_dir <- here::here(
 
 fs::dir_create(output_dir)
 
-# Fail early with explicit diagnostics before any scoring work is attempted.
+# This repository does not contain the large master-corpus text file on GitHub.
+# Do not attempt an expensive model run when the required input is absent.
 required_files <- c(
   include_corpus = include_file,
   relevance_model = model_file
@@ -41,7 +42,8 @@ if (length(missing_files)) {
     expected_path = unname(missing_files),
     exists = file.exists(missing_files),
     working_directory = getwd(),
-    repository_root = here::here()
+    repository_root = here::here(),
+    repository_commit = system2("git", c("rev-parse", "HEAD"), stdout = TRUE)
   )
   readr::write_csv(
     diagnostic,
@@ -52,7 +54,8 @@ if (length(missing_files)) {
     paste0(
       "Master relevance audit preflight failed. Missing required file(s): ",
       paste(unname(missing_files), collapse = "; "),
-      ". These files are not present in the repository checkout and must be supplied before the audit can run."
+      ". The large source corpus/model outputs are not present in the repository checkout. " ,
+      "Supply the validated inputs to the workflow as explicit artifacts/files before running the audit."
     ),
     call. = FALSE
   )
