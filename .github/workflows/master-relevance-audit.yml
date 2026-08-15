@@ -62,6 +62,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-r-4.6.1-relevance-packages-
 
+      - name: Install R packages if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          Rscript - <<'RS'
+          packages <- c(
+            "dplyr", "fs", "glmnet", "here", "Matrix", "openxlsx2",
+            "purrr", "quanteda", "readr", "stringdist", "stringi",
+            "stringr", "tibble", "tidyr"
+          )
+          lib <- Sys.getenv("R_LIBS_USER")
+          dir.create(lib, recursive = TRUE, showWarnings = FALSE)
+          installed <- rownames(installed.packages(lib.loc = lib))
+          missing <- setdiff(packages, installed)
+          if (length(missing)) {
+            cat("Installing missing packages:", paste(missing, collapse = ", "), "\n")
+            install.packages(
+              missing,
+              repos = "https://cloud.r-project.org",
+              Ncpus = max(1L, min(4L, parallel::detectCores(logical = TRUE)))
+            )
+          } else {
+            cat("All required R packages restored from cache.\n")
+          }
+          RS
+
       - name: Report R package cache status
         shell: bash
         run: |
