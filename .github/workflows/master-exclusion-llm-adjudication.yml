@@ -7,6 +7,7 @@ jobs:
   adjudicate:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
     steps:
       - name: Checkout repository
@@ -27,19 +28,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); pkgs <- c("dplyr","readr","jsonlite","httr2","tibble"); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) install.packages(missing)' 
+          Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); pkgs <- c("dplyr","readr","jsonlite","httr2","tibble"); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) install.packages(missing)'
 
-      - name: Locate master audit exclusions
+      - name: Download successful master audit artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p outputs/master_relevance_audit
-          if [[ -f outputs/master_relevance_audit/master_automatic_excludes.csv ]]; then
-            echo "Using existing automatic-exclusion file."
-          else
-            echo "master_automatic_excludes.csv not present in checkout. Download the successful audit artifact first." >&2
-            exit 1
-          fi
+          gh run download 31871194556 \
+            --repo "${{ github.repository }}" \
+            --name master-relevance-audit \
+            --dir outputs/master_relevance_audit
+          test -f outputs/master_relevance_audit/master_automatic_excludes.csv
+          n=$(tail -n +2 outputs/master_relevance_audit/master_automatic_excludes.csv | wc -l)
+          echo "Automatic exclusions downloaded: ${n}"
+          test "${n}" -eq 79
 
       - name: Run LLM adjudication
         env:
