@@ -85,9 +85,12 @@ master$review_priority <- dplyr::case_when(
 master$distance_to_exclusion_threshold <- master$probability_relevant - fitted$thresholds$exclude_threshold
 
 message("Master relevance audit: ranking records for manual review.")
+# Important: after filtering, use column names (not master$column) inside the
+# dplyr pipeline. master$column refers to the full 12,074-row vector and causes
+# a size mismatch when review_queue has fewer rows.
 review_queue <- master |>
-  dplyr::filter(master$model_disagreement | master$model_uncertain) |>
-  dplyr::arrange(dplyr::desc(master$model_disagreement), distance_to_exclusion_threshold, probability_relevant) |>
+  dplyr::filter(model_disagreement | model_uncertain) |>
+  dplyr::arrange(dplyr::desc(model_disagreement), distance_to_exclusion_threshold, probability_relevant) |>
   dplyr::select(record_id, title, abstract, authors, year, doi, probability_relevant, model_decision, model_disagreement, model_uncertain, review_priority, distance_to_exclusion_threshold)
 
 high_priority <- review_queue |> dplyr::filter(model_disagreement)
