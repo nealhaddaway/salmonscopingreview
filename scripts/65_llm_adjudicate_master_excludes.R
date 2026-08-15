@@ -35,9 +35,8 @@ system_prompt <- paste(
   "Decision hierarchy: 1 clearly eligible=RETAIN; 2 clearly ineligible=EXCLUDE; 3 otherwise=UNCERTAIN.",
   "Base the decision only on supplied title and abstract. Give one concise reason.", sep = "\n")
 
-# OpenAI Responses API structured outputs require the top-level JSON Schema
-# supplied via text.format.schema to be an OBJECT. The array therefore lives
-# inside the `results` property.
+# Strict JSON schema for the Responses API. The top-level value is an object,
+# with the decisions held in the required `results` array.
 result_item_schema <- list(
   type = "object",
   properties = list(
@@ -84,7 +83,7 @@ call_llm <- function(body, batch_ids) {
   parsed_json <- tryCatch(resp_body_json(response), error = function(e) stop("Invalid JSON response for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
   output_text <- extract_output(parsed_json)
   parsed <- tryCatch(jsonlite::fromJSON(output_text, simplifyVector = TRUE), error = function(e) stop("Invalid structured LLM output for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
-  if (is.null(parsed$results)) stop("Structured LLM output did not contain `results` for batch ", paste(batch_ids, collapse = ", "), call. = FALSE)
+  if (!is.list(parsed) || is.null(parsed$results) || !is.data.frame(parsed$results)) stop("Structured LLM output did not contain a usable `results` object for batch ", paste(batch_ids, collapse = ", "), call. = FALSE)
   parsed$results
 }
 
@@ -102,7 +101,7 @@ for (start in seq(1L, nrow(records), by = batch_size)) {
   message(sprintf("LLM adjudication: %d/%d records complete.", end, nrow(records)))
 }
 
-results <- bind_rows(out) |> left_join(records |> select(record_id, title, abstract), by = "record_id") |> left_join(records |> select(record_id, everything()), by = "record_id", suffix = c("", ".input")) |> select(-ends_with(".input")) |> relocate(record_id, title, abstract, llm_decision, llm_reason, llm_failed, llm_error)
+results <- bind_rows(out) |> left_join(records |> select(record_id, title, abstract), by = "record_id") |> relocate(record_id, title, abstract, llm_decision, llm_reason, llm_failed, llm_error)
 if (any(results$llm_failed) || anyNA(results$llm_decision)) stop("LLM adjudication contains failed/missing decisions; refusing to produce a reviewable uncertainty set.", call. = FALSE)
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 write_csv(results, output_path, na = "")
