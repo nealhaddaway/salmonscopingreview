@@ -1,0 +1,67 @@
+name: Master exclusion LLM adjudication
+
+on:
+  workflow_dispatch:
+
+jobs:
+  adjudicate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+
+      - name: Restore R package cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/R
+          key: ${{ runner.os }}-r-4.4-llm-adjudication-v1
+
+      - name: Install R dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); pkgs <- c("dplyr","readr","jsonlite","httr2","tibble"); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) install.packages(missing)' 
+
+      - name: Locate master audit exclusions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p outputs/master_relevance_audit
+          if [[ -f outputs/master_relevance_audit/master_automatic_excludes.csv ]]; then
+            echo "Using existing automatic-exclusion file."
+          else
+            echo "master_automatic_excludes.csv not present in checkout. Download the successful audit artifact first." >&2
+            exit 1
+          fi
+
+      - name: Run LLM adjudication
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          Rscript scripts/65_llm_adjudicate_master_excludes.R \
+            outputs/master_relevance_audit/master_automatic_excludes.csv \
+            outputs/master_relevance_audit/master_automatic_excludes_llm_adjudication.csv
+
+      - name: Validate adjudication output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s outputs/master_relevance_audit/master_automatic_excludes_llm_adjudication.csv
+          n=$(tail -n +2 outputs/master_relevance_audit/master_automatic_excludes_llm_adjudication.csv | wc -l)
+          echo "Adjudicated rows: ${n}"
+          test "${n}" -eq 79
+
+      - name: Upload adjudication results
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-exclusion-llm-adjudication
+          path: outputs/master_relevance_audit/master_automatic_excludes_llm_adjudication.csv
+          if-no-files-found: error
