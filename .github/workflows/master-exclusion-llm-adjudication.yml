@@ -18,17 +18,24 @@ jobs:
         with:
           r-version: '4.4'
 
+      - name: Install system dependency for R curl
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y libcurl4-openssl-dev
+
       - name: Restore R package cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/R
-          key: ${{ runner.os }}-r-4.4-llm-adjudication-v1
+          key: ${{ runner.os }}-r-4.4-llm-adjudication-v2
 
       - name: Install R dependencies
         shell: bash
         run: |
           set -euo pipefail
-          Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); pkgs <- c("dplyr","readr","jsonlite","httr2","tibble"); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) install.packages(missing)'
+          Rscript -e 'options(repos=c(CRAN="https://cloud.r-project.org")); pkgs <- c("dplyr","readr","jsonlite","httr2","tibble"); missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; if(length(missing)) install.packages(missing); stopifnot(all(vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)))'
 
       - name: Download successful master audit artifact
         env:
