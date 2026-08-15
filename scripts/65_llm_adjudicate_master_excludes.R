@@ -86,6 +86,32 @@ extract_output <- function(response) {
   text[[1]]$text
 }
 
+call_llm <- function(body, batch_ids) {
+  req <- request("https://api.openai.com/v1/responses") |>
+    req_auth_bearer_token(api_key) |>
+    req_body_json(body, auto_unbox = TRUE) |>
+    req_timeout(180) |>
+    req_retry(max_tries = 4, backoff = ~ 2^.x)
+
+  # Do not allow httr2 to hide a non-2xx response. Capture the API's actual
+  # status/body so malformed requests cannot masquerade as screening uncertainty.
+  response <- tryCatch(
+    req |> req_error(is_error = function(resp) FALSE) |> req_perform(),
+    error = function(e) stop("LLM transport failure for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE)
+  )
+
+  status <- resp_status(response)
+  if (status < 200 || status >= 300) {
+    body_text <- tryCatch(resp_body_string(response), error = function(e) "<unable to read response body>")
+    stop("LLM API returned HTTP ", status, " for batch ", paste(batch_ids, collapse = ", "), ". Response: ", body_text, call. = FALSE)
+  }
+
+  parsed_json <- tryCatch(resp_body_json(response), error = function(e) stop("Invalid JSON response for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
+  output_text <- extract_output(parsed_json)
+  tryCatch(jsonlite::fromJSON(output_text, simplifyVector = TRUE)$results,
+           error = function(e) stop("Invalid structured LLM output for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
+}
+
 # Process in small batches to avoid oversized requests and make failures recoverable.
 batch_size <- 10L
 out <- vector("list", ceiling(nrow(records) / batch_size))
@@ -102,34 +128,32 @@ for (start in seq(1L, nrow(records), by = batch_size)) {
     "Do not omit, merge, or invent records.\n\n", paste(blocks, collapse = "\n---\n")
   )
   body <- list(
-    model = "gpt-5-mini", store = FALSE, reasoning = list(effort = "low"),
+    model = "gpt-5-mini",
+    store = FALSE,
+    reasoning = list(effort = "low"),
     input = list(
       list(role = "system", content = list(list(type = "input_text", text = system_prompt))),
       list(role = "user", content = list(list(type = "input_text", text = user_prompt)))
     ),
-    text = list(verbosity = "low", format = list(type = "json_schema", name = "salmon_farming_relevance_batch", strict = TRUE, schema = schema))
+    text = list(
+      format = list(type = "json_schema", name = "salmon_farming_relevance_batch", strict = TRUE, schema = schema),
+      verbosity = "low"
+    )
   )
 
-  parsed <- tryCatch({
-    response <- request("https://api.openai.com/v1/responses") |>
-      req_auth_bearer_token(api_key) |>
-      req_body_json(body, auto_unbox = TRUE) |>
-      req_timeout(180) |>
-      req_retry(max_tries = 4, backoff = ~ 2^.x) |>
-      req_perform() |>
-      resp_body_json()
-    jsonlite::fromJSON(extract_output(response), simplifyVector = TRUE)$results
-  }, error = function(e) {
-    tibble(record_id = batch$record_id, llm_decision = "uncertain", llm_reason = NA_character_, llm_failed = TRUE, llm_error = conditionMessage(e))
-  })
+  parsed <- call_llm(body, batch$record_id)
+  parsed <- as_tibble(parsed) |>
+    transmute(record_id = as.character(record_id),
+              llm_decision = as.character(decision),
+              llm_reason = as.character(reason),
+              llm_failed = FALSE,
+              llm_error = NA_character_)
 
-  if (!"llm_decision" %in% names(parsed)) {
-    parsed <- as_tibble(parsed) |>
-      transmute(record_id = as.character(record_id), llm_decision = as.character(decision), llm_reason = as.character(reason), llm_failed = FALSE, llm_error = NA_character_)
-  }
   parsed$record_id <- as.character(parsed$record_id)
-  if (!isTRUE(all(sort(parsed$record_id) == sort(batch$record_id)))) stop("Batch response IDs did not match input IDs.")
-  out[[ceiling(start / batch_size)]] <- as_tibble(parsed)
+  if (nrow(parsed) != nrow(batch) || !isTRUE(all(sort(parsed$record_id) == sort(batch$record_id)))) {
+    stop("Batch response IDs did not exactly match input IDs for batch ", start, "-", end, call. = FALSE)
+  }
+  out[[ceiling(start / batch_size)]] <- parsed
   message(sprintf("LLM adjudication: %d/%d records complete.", end, nrow(records)))
 }
 
@@ -138,6 +162,10 @@ results <- bind_rows(out) |>
   left_join(records |> select(record_id, everything()), by = "record_id", suffix = c("", ".input")) |>
   select(-ends_with(".input")) |>
   relocate(record_id, title, abstract, llm_decision, llm_reason, llm_failed, llm_error)
+
+if (any(results$llm_failed) || anyNA(results$llm_decision)) {
+  stop("LLM adjudication contains failed/missing decisions; refusing to produce a reviewable uncertainty set.", call. = FALSE)
+}
 
 dir.create(dirname(output_path), recursive = TRUE, showWarnings = FALSE)
 write_csv(results, output_path, na = "")
