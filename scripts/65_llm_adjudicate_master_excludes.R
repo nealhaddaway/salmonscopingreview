@@ -35,9 +35,9 @@ system_prompt <- paste(
   "Decision hierarchy: 1 clearly eligible=RETAIN; 2 clearly ineligible=EXCLUDE; 3 otherwise=UNCERTAIN.",
   "Base the decision only on supplied title and abstract. Give one concise reason.", sep = "\n")
 
-# The OpenAI Responses API requires the schema to define `results` as an
-# array directly. The previous implementation wrapped that array inside an
-# object schema incorrectly for this endpoint, producing HTTP 400.
+# OpenAI Responses API structured outputs require the top-level JSON Schema
+# supplied via text.format.schema to be an OBJECT. The array therefore lives
+# inside the `results` property.
 result_item_schema <- list(
   type = "object",
   properties = list(
@@ -50,8 +50,15 @@ result_item_schema <- list(
 )
 
 schema <- list(
-  type = "array",
-  items = result_item_schema
+  type = "object",
+  properties = list(
+    results = list(
+      type = "array",
+      items = result_item_schema
+    )
+  ),
+  required = c("results"),
+  additionalProperties = FALSE
 )
 
 extract_output <- function(response) {
@@ -76,7 +83,9 @@ call_llm <- function(body, batch_ids) {
   }
   parsed_json <- tryCatch(resp_body_json(response), error = function(e) stop("Invalid JSON response for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
   output_text <- extract_output(parsed_json)
-  tryCatch(jsonlite::fromJSON(output_text, simplifyVector = TRUE), error = function(e) stop("Invalid structured LLM output for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
+  parsed <- tryCatch(jsonlite::fromJSON(output_text, simplifyVector = TRUE), error = function(e) stop("Invalid structured LLM output for batch ", paste(batch_ids, collapse = ", "), ": ", conditionMessage(e), call. = FALSE))
+  if (is.null(parsed$results)) stop("Structured LLM output did not contain `results` for batch ", paste(batch_ids, collapse = ", "), call. = FALSE)
+  parsed$results
 }
 
 batch_size <- 10L
