@@ -9,6 +9,7 @@ jobs:
     permissions:
       actions: read
       contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,7 +30,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/R
-          key: ${{ runner.os }}-r-4.4-llm-adjudication-v2
+          key: ${{ runner.os }}-r-4.4-llm-adjudication-v3
 
       - name: Install R dependencies
         shell: bash
@@ -44,14 +45,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p outputs/master_relevance_audit
-          gh run download 31871194556 \
-            --repo "${{ github.repository }}" \
-            --name master-relevance-audit \
-            --dir outputs/master_relevance_audit
-          test -f outputs/master_relevance_audit/master_automatic_excludes.csv
-          n=$(tail -n +2 outputs/master_relevance_audit/master_automatic_excludes.csv | wc -l)
-          echo "Automatic exclusions downloaded: ${n}"
-          test "${n}" -eq 79
+          curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/nealhaddaway/salmonscopingreview/actions/artifacts/9243571485/zip" \
+            -o /tmp/master-relevance-audit.zip
+          unzip -q /tmp/master-relevance-audit.zip -d outputs/master_relevance_audit
+          test -f outputs/master_relevance_audit/master_relevance_scores.csv
+          Rscript -e 'x <- read.csv("outputs/master_relevance_audit/master_relevance_scores.csv", check.names=FALSE); p <- tolower(ifelse(is.na(x$review_priority), "", x$review_priority)); n <- sum(grepl("recommends exclusion", p, fixed=TRUE)); cat("Automatic exclusion recommendations:", n, "\n"); stopifnot(n == 79); y <- x[grepl("recommends exclusion", p, fixed=TRUE), c("record_id","title","abstract","authors","year","doi","review_priority","probability_relevant","distance_to_exclusion_threshold")]; write.csv(y, "outputs/master_relevance_audit/master_automatic_excludes.csv", row.names=FALSE, na="")'
 
       - name: Run LLM adjudication
         env:
