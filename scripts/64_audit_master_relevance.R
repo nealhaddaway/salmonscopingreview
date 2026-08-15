@@ -29,8 +29,7 @@ output_dir <- here::here(
 
 fs::dir_create(output_dir)
 
-# This repository does not contain the large master-corpus text file on GitHub.
-# Do not attempt an expensive model run when the required input is absent.
+# Do not attempt an expensive model run when a required input is absent.
 required_files <- c(
   include_corpus = include_file,
   relevance_model = model_file
@@ -54,8 +53,7 @@ if (length(missing_files)) {
     paste0(
       "Master relevance audit preflight failed. Missing required file(s): ",
       paste(unname(missing_files), collapse = "; "),
-      ". The large source corpus/model outputs are not present in the repository checkout. " ,
-      "Supply the validated inputs to the workflow as explicit artifacts/files before running the audit."
+      ". The validated inputs were not supplied to the workflow runner."
     ),
     call. = FALSE
   )
@@ -73,20 +71,24 @@ message(sprintf("Master relevance audit: model loaded with %d features.", length
 message("Master relevance audit: scoring master corpus.")
 master$probability_relevant <- predict_relevance_probability(fitted$model, master)
 master$model_decision <- assign_screening_decision(master$probability_relevant, fitted$thresholds)
+
+# A disagreement is an included master record that the validated model would
+# automatically exclude. Keep this as an explicit master-level flag so it is
+# available both to the review queue and to the exported audit tables.
 master$model_disagreement <- master$model_decision == "automatic_exclude"
 master$model_uncertain <- master$model_decision == "review"
 master$review_priority <- dplyr::case_when(
-  master$model_decision == "automatic_exclude" ~ "HIGH: model recommends exclusion",
-  master$model_decision == "review" ~ "MEDIUM: model is uncertain",
+  master$model_disagreement ~ "HIGH: model recommends exclusion",
+  master$model_uncertain ~ "MEDIUM: model is uncertain",
   TRUE ~ "LOW: model supports inclusion"
 )
 master$distance_to_exclusion_threshold <- master$probability_relevant - fitted$thresholds$exclude_threshold
 
 message("Master relevance audit: ranking records for manual review.")
 review_queue <- master |>
-  dplyr::filter(model_disagreement | model_uncertain) |>
-  dplyr::arrange(model_disagreement, distance_to_exclusion_threshold, probability_relevant) |>
-  dplyr::select(record_id, title, abstract, authors, year, doi, probability_relevant, model_decision, review_priority, distance_to_exclusion_threshold)
+  dplyr::filter(master$model_disagreement | master$model_uncertain) |>
+  dplyr::arrange(dplyr::desc(master$model_disagreement), distance_to_exclusion_threshold, probability_relevant) |>
+  dplyr::select(record_id, title, abstract, authors, year, doi, probability_relevant, model_decision, model_disagreement, model_uncertain, review_priority, distance_to_exclusion_threshold)
 
 high_priority <- review_queue |> dplyr::filter(model_disagreement)
 uncertain <- review_queue |> dplyr::filter(model_uncertain)
