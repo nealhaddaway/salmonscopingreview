@@ -6,26 +6,24 @@ on:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch screening corpus and model
+      - name: Fetch screening inputs from LivingEvidenceMap
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "data_raw" "outputs/stage_5_relevance_screening/model"
-          curl -fL --retry 3 --retry-delay 5 \
-            "https://raw.githubusercontent.com/thesalmonandthetomato/LivingEvidenceMap/main/data/reference/INCLUDES%20fixed%20abstracts.txt" \
-            -o "data_raw/INCLUDES fixed abstracts.txt"
-          curl -fL --retry 3 --retry-delay 5 \
-            "https://raw.githubusercontent.com/thesalmonandthetomato/LivingEvidenceMap/main/data/reference/salmon_farming_relevance_model.rds" \
-            -o "outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds"
-          test -s "data_raw/INCLUDES fixed abstracts.txt"
-          test -s "outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds"
-          echo "Corpus: $(wc -c < "data_raw/INCLUDES fixed abstracts.txt") bytes"
-          echo "Model:  $(wc -c < "outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds") bytes"
+          mkdir -p data_raw outputs/stage_5_relevance_screening/model
+          BASE='https://raw.githubusercontent.com/thesalmonandthetomato/LivingEvidenceMap/main/data/reference'
+          curl -L --fail --retry 3 --retry-delay 2 "$BASE/INCLUDES%20fixed%20abstracts.txt" -o 'data_raw/INCLUDES fixed abstracts.txt'
+          curl -L --fail --retry 3 --retry-delay 2 "$BASE/salmon_farming_relevance_model.rds" -o 'outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds'
+          test -s 'data_raw/INCLUDES fixed abstracts.txt'
+          test -s 'outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds'
+          echo "Corpus size: $(stat -c%s 'data_raw/INCLUDES fixed abstracts.txt') bytes"
+          echo "Model size: $(stat -c%s 'outputs/stage_5_relevance_screening/model/salmon_farming_relevance_model.rds') bytes"
 
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
