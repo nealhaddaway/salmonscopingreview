@@ -34,18 +34,39 @@ jobs:
           r-version: '4.6.1'
           use-public-rspm: true
 
-      - name: Install system dependencies
+      - name: Configure R package library
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libuv1-dev
+          set -euo pipefail
+          R_LIBS_USER="$HOME/R/x86_64-pc-linux-gnu-library/4.6"
+          mkdir -p "$R_LIBS_USER"
+          echo "R_LIBS_USER=$R_LIBS_USER" >> "$GITHUB_ENV"
+          echo "R library: $R_LIBS_USER"
+
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! dpkg-query -W -f='${Status}' libuv1-dev 2>/dev/null | grep -q 'install ok installed'; then
+            sudo apt-get update
+            sudo apt-get install -y libuv1-dev
+          else
+            echo 'libuv1-dev already installed'
+          fi
 
       - name: Cache R packages
         uses: actions/cache@v4
         with:
           path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-4.6.1-relevance-${{ hashFiles('R/relevance_screening.R', 'scripts/64_audit_master_relevance.R') }}
+          key: ${{ runner.os }}-r-4.6.1-relevance-packages-v1
           restore-keys: |
-            ${{ runner.os }}-r-4.6.1-relevance-
+            ${{ runner.os }}-r-4.6.1-relevance-packages-
+
+      - name: Report R package cache status
+        shell: bash
+        run: |
+          set -euo pipefail
+          Rscript -e 'cat("R library:\n", Sys.getenv("R_LIBS_USER"), "\nInstalled packages: ", nrow(installed.packages(lib.loc=Sys.getenv("R_LIBS_USER"))), "\n", sep="")'
 
       - name: Run master relevance audit
         env:
