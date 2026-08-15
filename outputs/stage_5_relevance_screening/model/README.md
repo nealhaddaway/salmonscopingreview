@@ -1,0 +1,1 @@
+The relevance model file is restored/provided separately for the screening workflow. Expected path: salmon_farming_relevance_model.rds. The workflow should verify its presence before running the audit.
